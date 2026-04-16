@@ -1,89 +1,84 @@
 import streamlit as st
 
-st.set_page_config(page_title="IA SPEEDWAY ANALYZER", layout="wide")
+st.set_page_config(page_title="IA SPEEDWAY PRO - PÓDIO", layout="wide")
 
-# Estilização para Mobile e Desktop
 st.markdown("""
 <style>
     .main { background-color: #020617; color: white; }
-    .stButton>button { height: 70px; border-radius: 15px; font-weight: bold; font-size: 20px; }
-    .status-box { background: #1e293b; border: 2px solid #334155; padding: 20px; border-radius: 15px; text-align: center; }
-    .signal-on { background: #064e3b; border: 2px solid #22c55e; padding: 20px; border-radius: 15px; text-align: center; animation: pulse 2s infinite; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+    .stButton>button { height: 60px; border-radius: 10px; font-weight: bold; }
+    .gold { border: 2px solid #facc15 !important; color: #facc15 !important; }
+    .silver { border: 2px solid #94a3b8 !important; color: #94a3b8 !important; }
+    .signal-box { background: #064e3b; border: 2px solid #22c55e; padding: 20px; border-radius: 15px; text-align: center; }
 </style>
 """, unsafe_allow_html=True)
 
-if 'h_speed' not in st.session_state:
-    st.session_state.h_speed = []
+if 'h_speed_v' not in st.session_state: st.session_state.h_speed_v = [] # Vencedores
+if 'h_speed_p' not in st.session_state: st.session_state.h_speed_p = [] # Segundos (Place)
 
-def reg_speed(v):
-    st.session_state.h_speed.insert(0, v)
+st.title("🏍️ SPEEDWAY PRO - ANÁLISE DE PÓDIO")
 
-st.title("🏍️ IA SPEEDWAY - MAXIMAS")
+c_input, c_analise = st.columns([1.2, 1])
 
-col_input, col_analysis = st.columns([1, 1.2])
-
-with col_input:
-    st.subheader("📥 Registrar Vencedor")
-    st.write("Selecione o piloto que venceu a corrida:")
+with c_input:
+    st.subheader("🏁 Registrar Resultado")
     
-    # Grid de botões para os 4 pilotos
-    c1, c2 = st.columns(2)
-    if c1.button("PILOTO 1", key="sp1", use_container_width=True): reg_speed(1); st.rerun()
-    if c2.button("PILOTO 2", key="sp2", use_container_width=True): reg_speed(2); st.rerun()
-    
-    c3, c4 = st.columns(2)
-    if c3.button("PILOTO 3", key="sp3", use_container_width=True): reg_speed(3); st.rerun()
-    if c4.button("PILOTO 4", key="sp4", use_container_width=True): reg_speed(4); st.rerun()
+    # Registro do 1º Colocado
+    st.write("🏆 **1º COLOCADO (Vencedor)**")
+    v1, v2, v3, v4 = st.columns(4)
+    if v1.button("P1", key="v1", help="Piloto 1 venceu"): st.session_state.h_speed_v.insert(0, 1); st.rerun()
+    if v2.button("P2", key="v2"): st.session_state.h_speed_v.insert(0, 2); st.rerun()
+    if v3.button("P3", key="v3"): st.session_state.h_speed_v.insert(0, 3); st.rerun()
+    if v4.button("P4", key="v4"): st.session_state.h_speed_v.insert(0, 4); st.rerun()
 
-    st.divider()
-    if st.button("🗑️ LIMPAR HISTÓRICO"):
-        st.session_state.h_speed = []
+    # Registro do 2º Colocado
+    st.write("🥈 **2º COLOCADO (Place)**")
+    p1, p2, p3, p4 = st.columns(4)
+    if p1.button("P1", key="p1"): st.session_state.h_speed_p.insert(0, 1); st.rerun()
+    if p2.button("P2", key="p2"): st.session_state.h_speed_p.insert(0, 2); st.rerun()
+    if p3.button("P3", key="p3"): st.session_state.h_speed_p.insert(0, 3); st.rerun()
+    if p4.button("P4", key="p4"): st.session_state.h_speed_p.insert(0, 4); st.rerun()
+
+    if st.button("🗑️ LIMPAR TUDO"):
+        st.session_state.h_speed_v = []
+        st.session_state.h_speed_p = []
         st.rerun()
 
-with col_analysis:
-    st.subheader("🛰️ Análise de Máximas")
+with c_analise:
+    st.subheader("📊 Performance de Pódio")
     
-    if len(st.session_state.h_speed) < 5:
-        st.info("Aguardando registro de pelo menos 5 corridas para gerar sinais...")
-    else:
-        # Calcular atraso (Gap) para cada piloto
-        atrasos = {1: 0, 2: 0, 3: 0, 4: 0}
-        for p in range(1, 5):
-            for res in st.session_state.h_speed:
-                if res != p:
-                    atrasos[p] += 1
-                else:
-                    break
+    if len(st.session_state.h_speed_v) >= 5:
+        # Cálculo de Atrasos para Vitória e para Pódio
+        atrasos_v = {i: 0 for i in range(1, 5)}
+        atrasos_podio = {i: 0 for i in range(1, 5)}
         
-        # Exibir métricas de atraso
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("P1", f"{atrasos[1]}g")
-        m2.metric("P2", f"{atrasos[2]}g")
-        m3.metric("P3", f"{atrasos[3]}g")
-        m4.metric("P4", f"{atrasos[4]}g")
+        for i in range(1, 5):
+            # Atraso para vencer
+            for res in st.session_state.h_speed_v:
+                if res != i: atrasos_v[i] += 1
+                else: break
+            
+            # Atraso para aparecer no pódio (1º ou 2º)
+            for idx, res_v in enumerate(st.session_state.h_speed_v):
+                res_p = st.session_state.h_speed_p[idx] if idx < len(st.session_state.h_speed_p) else None
+                if res_v != i and res_p != i: atrasos_podio[i] += 1
+                else: break
 
-        # Lógica de Sinal (Dutching nos 2 com maior atraso)
-        sorted_atrasos = sorted(atrasos.items(), key=lambda x: x[1], reverse=True)
-        p_alvo1, gap1 = sorted_atrasos[0]
-        p_alvo2, gap2 = sorted_atrasos[1]
+        # Exibição
+        for i in range(1, 5):
+            st.write(f"**Piloto {i}:** Sem vencer: `{atrasos_v[i]}g` | Fora do Pódio: `{atrasos_podio[i]}g` ")
 
-        # Se o maior atraso for >= 8 giros, gera sinal
-        if gap1 >= 8:
+        st.divider()
+        
+        # Lógica de Sinal Inteligente
+        # Se um piloto está há muito tempo fora do pódio, a chance de ele ser 1º ou 2º é Gigante.
+        alvo = max(atrasos_podio, key=atrasos_podio.get)
+        if atrasos_podio[alvo] >= 6:
             st.markdown(f"""
-                <div class="signal-on">
-                    <h2 style='color:white; margin:0;'>🎯 SINAL CONFIRMADO</h2>
-                    <p style='color:#22c55e; font-weight:bold;'>ENTRADA: PILOTOS {p_alvo1} E {p_alvo2}</p>
-                    <small style='color:white;'>Estratégia: Cobrir as duas maiores probabilidades</small>
+                <div class="signal-box">
+                    <h3>🎯 SINAL DE SEGURANÇA</h3>
+                    <p>Entrar no <b>PILOTO {alvo}</b> para terminar em <b>1º ou 2º</b></p>
+                    <small>Atraso de Pódio: {atrasos_podio[alvo]} corridas</small>
                 </div>
             """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-                <div class="status-box">
-                    <h3>Aguardando Máxima</h3>
-                    <p>Próximo alvo provável: Piloto {p_alvo1}</p>
-                </div>
-            """, unsafe_allow_html=True)
-
-    st.write("📜 **Últimos resultados:**")
-    st.write(st.session_state.h_speed[:10])
+    else:
+        st.info("Registre 5 resultados (1º e 2º) para ativar a inteligência.")
