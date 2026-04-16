@@ -1,79 +1,89 @@
 import streamlit as st
 
-# 1. Configuração da Página
-st.set_page_config(page_title="IA AVIATOR - CRASH ANALYZER", layout="wide")
+st.set_page_config(page_title="IA SPEEDWAY ANALYZER", layout="wide")
 
-# 2. Estilização Visual
+# Estilização para Mobile e Desktop
 st.markdown("""
 <style>
-    .main { background-color: #020617; color: #f8fafc; }
-    .stButton>button { width: 100%; border-radius: 12px; height: 50px; font-weight: bold; }
-    .signal-15 { background: #1e3a8a; border: 2px solid #3b82f6; padding: 20px; border-radius: 15px; text-align: center; }
-    .signal-10x { background: #701a75; border: 2px solid #d946ef; padding: 20px; border-radius: 15px; text-align: center; animation: pulse 1.5s infinite; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+    .main { background-color: #020617; color: white; }
+    .stButton>button { height: 70px; border-radius: 15px; font-weight: bold; font-size: 20px; }
+    .status-box { background: #1e293b; border: 2px solid #334155; padding: 20px; border-radius: 15px; text-align: center; }
+    .signal-on { background: #064e3b; border: 2px solid #22c55e; padding: 20px; border-radius: 15px; text-align: center; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Inicialização do Histórico
-if 'aviator_hist' not in st.session_state:
-    st.session_state.aviator_hist = []
+if 'h_speed' not in st.session_state:
+    st.session_state.h_speed = []
 
-# --- FUNÇÕES DE MOTOR ---
-def analisar_aviator():
-    h = st.session_state.aviator_hist
-    if len(h) < 5: return None
-    
-    baixas = 0
-    for v in h:
-        if v < 1.3: baixas += 1
-        else: break
-        
-    g10x = 0
-    for v in h:
-        if v < 10: g10x += 1
-        else: break
+def reg_speed(v):
+    st.session_state.h_speed.insert(0, v)
 
-    if baixas >= 3:
-        return {"sug": "ENTRADA 1.5x / 2.0x", "tipo": "recup"}
-    if g10x >= 35:
-        return {"sug": "BUSCAR 10.0x (ROSA)", "tipo": "rosa"}
-    return None
+st.title("🏍️ IA SPEEDWAY - MAXIMAS")
 
-# --- INTERFACE ---
-st.title("✈️ IA AVIATOR - ESTRATÉGIA")
-
-col_input, col_status = st.columns([1, 1.2])
+col_input, col_analysis = st.columns([1, 1.2])
 
 with col_input:
-    st.subheader("📥 Registrar Vela")
-    valor_vela = st.number_input("Valor da vela:", min_value=1.0, step=0.01, format="%.2f")
-    if st.button("REGISTRAR", use_container_width=True):
-        st.session_state.aviator_hist.insert(0, valor_vela)
-        st.rerun()
+    st.subheader("📥 Registrar Vencedor")
+    st.write("Selecione o piloto que venceu a corrida:")
     
+    # Grid de botões para os 4 pilotos
+    c1, c2 = st.columns(2)
+    if c1.button("PILOTO 1", key="sp1", use_container_width=True): reg_speed(1); st.rerun()
+    if c2.button("PILOTO 2", key="sp2", use_container_width=True): reg_speed(2); st.rerun()
+    
+    c3, c4 = st.columns(2)
+    if c3.button("PILOTO 3", key="sp3", use_container_width=True): reg_speed(3); st.rerun()
+    if c4.button("PILOTO 4", key="sp4", use_container_width=True): reg_speed(4); st.rerun()
+
     st.divider()
-    st.write("📜 **Histórico:**")
-    for val in st.session_state.aviator_hist[:10]:
-        cor = "#d946ef" if val >= 10 else "#3b82f6" if val >= 2 else "#94a3b8"
-        st.markdown(f"<span style='color:{cor}; font-weight:bold;'>{val}x</span>", unsafe_allow_html=True)
+    if st.button("🗑️ LIMPAR HISTÓRICO"):
+        st.session_state.h_speed = []
+        st.rerun()
 
-with col_status:
-    st.subheader("🔮 Previsão de Ciclo")
-    res = analisar_aviator()
+with col_analysis:
+    st.subheader("🛰️ Análise de Máximas")
     
-    if res:
-        estilo = "signal-10x" if res['tipo'] == "rosa" else "signal-15"
-        st.markdown(f"<div class='{estilo}'><h3>{res['sug']}</h3></div>", unsafe_allow_html=True)
+    if len(st.session_state.h_speed) < 5:
+        st.info("Aguardando registro de pelo menos 5 corridas para gerar sinais...")
     else:
-        st.info("Aguardando mais dados para análise...")
+        # Calcular atraso (Gap) para cada piloto
+        atrasos = {1: 0, 2: 0, 3: 0, 4: 0}
+        for p in range(1, 5):
+            for res in st.session_state.h_speed:
+                if res != p:
+                    atrasos[p] += 1
+                else:
+                    break
+        
+        # Exibir métricas de atraso
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("P1", f"{atrasos[1]}g")
+        m2.metric("P2", f"{atrasos[2]}g")
+        m3.metric("P3", f"{atrasos[3]}g")
+        m4.metric("P4", f"{atrasos[4]}g")
 
-    if st.session_state.aviator_hist:
-        conta_g10 = 0
-        for x in st.session_state.aviator_hist:
-            if x < 10: conta_g10 += 1
-            else: break
-        st.metric("Giros sem 10x", f"{conta_g10}")
+        # Lógica de Sinal (Dutching nos 2 com maior atraso)
+        sorted_atrasos = sorted(atrasos.items(), key=lambda x: x[1], reverse=True)
+        p_alvo1, gap1 = sorted_atrasos[0]
+        p_alvo2, gap2 = sorted_atrasos[1]
 
-if st.button("🗑️ LIMPAR"):
-    st.session_state.aviator_hist = []
-    st.rerun()
+        # Se o maior atraso for >= 8 giros, gera sinal
+        if gap1 >= 8:
+            st.markdown(f"""
+                <div class="signal-on">
+                    <h2 style='color:white; margin:0;'>🎯 SINAL CONFIRMADO</h2>
+                    <p style='color:#22c55e; font-weight:bold;'>ENTRADA: PILOTOS {p_alvo1} E {p_alvo2}</p>
+                    <small style='color:white;'>Estratégia: Cobrir as duas maiores probabilidades</small>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+                <div class="status-box">
+                    <h3>Aguardando Máxima</h3>
+                    <p>Próximo alvo provável: Piloto {p_alvo1}</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    st.write("📜 **Últimos resultados:**")
+    st.write(st.session_state.h_speed[:10])
